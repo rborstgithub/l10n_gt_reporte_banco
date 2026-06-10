@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Conciliacion Bancaria",
-    "version": "19.0.1.0.1",
+    "version": "17.0.1.0.1",
     "summary": "Botones personalizados para el reporte de conciliacion bancaria",
     "category": "Accounting/Accounting",
     "author": "aquíH",

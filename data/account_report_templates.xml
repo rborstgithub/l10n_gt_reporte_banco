@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="conciliacion_personalizada_pdf_export_main" inherit_id="account_reports.pdf_export_main">
+        <xpath expr="//ul[@class='o_footnote']" position="before">
+            <t t-if="lineas_resumen_personalizado or lineas_firma">
+                <div style="margin-top: 24px; page-break-inside: avoid !important; break-inside: avoid-page !important; display: inline-block; width: 100%; font-family: 'Segoe UI', Arial, sans-serif; color: #1f2933;">
+                    <t t-if="lineas_resumen_personalizado">
+                        <table class="o_table table-hover" style="border-collapse: collapse; width: 88%; margin-left: auto; table-layout: fixed; font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px;">
+                            <tbody>
+                                <tr t-foreach="lineas_resumen_personalizado" t-as="linea_resumen">
+                                    <td t-attf-style="width: 72%; padding: 6px 10px; border: 1px solid #d9d9d9;#{' font-weight: 700;' if linea_resumen_index == len(lineas_resumen_personalizado) - 1 else ''}">
+                                        <t t-out="linea_resumen['label']"/>
+                                    </td>
+                                    <td class="o_text_end" t-attf-style="width: 28%; padding: 6px 10px; border: 1px solid #d9d9d9;#{' font-weight: 700;' if linea_resumen_index == len(lineas_resumen_personalizado) - 1 else ''}">
+                                        <t t-out="linea_resumen['amount_formatted']"/>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </t>
+                    <t t-if="lineas_firma">
+                        <div style="margin-top: 26px; width: 48%; page-break-inside: avoid !important; break-inside: avoid-page !important; font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px;">
+                            <div t-foreach="lineas_firma" t-as="linea_firma" t-att-style="'margin-top: %spx; page-break-inside: avoid !important; break-inside: avoid-page !important;' % (0 if linea_firma_index == 0 else 26)">
+                                <div style="height: 34px; width: 100%;"/>
+                                <div style="border-bottom: 1px solid #000000; height: 1px; width: 100%;"/>
+                                <div style="margin-top: 7px; color: #111827; line-height: 1.2;">
+                                    <div>
+                                        <t t-out="linea_firma['title']"/>
+                                    </div>
+                                    <div>
+                                        <t t-out="linea_firma['subtitle']"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+            </t>
+        </xpath>
+    </template>
+</odoo>

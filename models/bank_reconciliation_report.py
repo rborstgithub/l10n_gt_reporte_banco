@@ -16,20 +16,20 @@ class BankReconciliationReportCustomHandler(models.AbstractModel):
         params_accion_existentes = {boton.get("action_param") for boton in botones}
         botones_personalizados = [
             {
-                "name": _("PDF Personalizado"),
+                "name": _("PDF P."),
                 "sequence": 15,
                 "action": "export_file",
                 "action_param": "exportar_a_pdf_personalizado",
                 "branch_allowed": True,
-                "always_show": True,
+                "always_show": False,
             },
             {
-                "name": _("XLSX Personalizado"),
+                "name": _("XLSX P."),
                 "sequence": 25,
                 "action": "export_file",
                 "action_param": "exportar_a_xlsx_personalizado",
                 "branch_allowed": True,
-                "always_show": True,
+                "always_show": False,
             },
         ]
 

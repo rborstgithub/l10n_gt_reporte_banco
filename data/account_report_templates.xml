@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="conciliacion_personalizada_pdf_export_main" inherit_id="account_reports.pdf_export_main">
-        <xpath expr="//ul[@class='o_footnote']" position="before">
+    <template id="conciliacion_personalizada_pdf_export_main" inherit_id="account_reports.main_template">
+        <xpath expr="//div[hasclass('js_account_report_footnotes')]" position="before">
             <t t-if="lineas_resumen_personalizado or lineas_firma">
                 <div style="margin-top: 24px; page-break-inside: avoid !important; break-inside: avoid-page !important; display: inline-block; width: 100%; font-family: 'Segoe UI', Arial, sans-serif; color: #1f2933;">
                     <t t-if="lineas_resumen_personalizado">

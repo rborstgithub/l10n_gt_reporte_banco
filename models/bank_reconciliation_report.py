@@ -20,16 +20,14 @@ class BankReconciliationReportCustomHandler(models.AbstractModel):
                 "sequence": 15,
                 "action": "export_file",
                 "action_param": "exportar_a_pdf_personalizado",
-                "branch_allowed": True,
-                "always_show": False,
+                "file_export_type": _("PDF"),
             },
             {
                 "name": _("XLSX P."),
                 "sequence": 25,
                 "action": "export_file",
                 "action_param": "exportar_a_xlsx_personalizado",
-                "branch_allowed": True,
-                "always_show": False,
+                "file_export_type": _("XLSX"),
             },
         ]
 
@@ -50,8 +48,8 @@ class BankReconciliationReportCustomHandler(models.AbstractModel):
         reporte = self.env["account.report"].browse(options["report_id"])
         return reporte.export_to_xlsx(self._obtener_opciones_exportacion_personalizada(options), response=response)
 
-    def _custom_line_postprocessor(self, report, options, lines, warnings=None):
-        lines = super()._custom_line_postprocessor(report, options, lines, warnings=warnings)
+    def _custom_line_postprocessor(self, report, options, lines):
+        lines = super()._custom_line_postprocessor(report, options, lines)
         if not options.get("modo_personalizado"):
             return lines
 
@@ -59,30 +57,41 @@ class BankReconciliationReportCustomHandler(models.AbstractModel):
         if not indices_columna_contacto:
             return lines
 
-        linea_a_id_apunte = {}
+        # En 16 las lineas de detalle apuntan a account.bank.statement.line,
+        # account.payment o account.move (no a account.move.line como en 17).
+        modelos_detalle = ("account.bank.statement.line", "account.payment", "account.move")
+        linea_a_registro = {}
+        ids_por_modelo = {modelo: set() for modelo in modelos_detalle}
         for linea in lines:
             modelo, modelo_id = report._get_model_info_from_id(linea.get("id"))
-            if modelo == "account.move.line" and modelo_id:
-                linea_a_id_apunte[linea["id"]] = modelo_id
+            if modelo in ids_por_modelo and modelo_id:
+                linea_a_registro[linea["id"]] = (modelo, modelo_id)
+                ids_por_modelo[modelo].add(modelo_id)
 
-        apuntes_por_id = {
-            apunte.id: apunte
-            for apunte in self.env["account.move.line"].browse(list(linea_a_id_apunte.values()))
+        registros_por_modelo = {
+            modelo: {
+                registro.id: registro
+                for registro in self.env[modelo].browse(list(ids_modelo))
+            }
+            for modelo, ids_modelo in ids_por_modelo.items()
         }
 
         for linea in lines:
             nombre_contacto = ""
-            id_apunte = linea_a_id_apunte.get(linea.get("id"))
-            if id_apunte:
-                nombre_contacto = self._obtener_nombre_contacto_desde_apunte(apuntes_por_id[id_apunte])
+            modelo_y_id = linea_a_registro.get(linea.get("id"))
+            if modelo_y_id:
+                modelo, modelo_id = modelo_y_id
+                registro = registros_por_modelo[modelo].get(modelo_id)
+                if registro:
+                    nombre_contacto = self._obtener_nombre_contacto_desde_registro(modelo, registro)
 
             for indice_columna in indices_columna_contacto:
                 if indice_columna < len(linea["columns"]):
-                    linea["columns"][indice_columna] = report._build_column_dict(
-                        nombre_contacto,
-                        options["columns"][indice_columna],
-                        options=options,
-                    )
+                    linea["columns"][indice_columna] = {
+                        "name": nombre_contacto,
+                        "no_format": nombre_contacto,
+                        "class": "",
+                    }
 
         return lines
 
@@ -122,21 +131,15 @@ class BankReconciliationReportCustomHandler(models.AbstractModel):
             if columna.get("expression_label") == self._ETIQUETA_COLUMNA_CONTACTO
         ]
 
-    def _obtener_nombre_contacto_desde_apunte(self, apunte):
-        contacto = apunte.partner_id.commercial_partner_id
+    def _obtener_nombre_contacto_desde_registro(self, modelo, registro):
+        contacto = registro.partner_id.commercial_partner_id
         if contacto:
             return contacto.display_name
 
-        linea_extracto = apunte.statement_line_id
-        if not linea_extracto:
-            return ""
+        if modelo == "account.bank.statement.line":
+            contacto_inferido = registro._retrieve_partner()
+            if contacto_inferido:
+                return contacto_inferido.display_name
+            return registro.partner_name or ""
 
-        contacto = linea_extracto.partner_id.commercial_partner_id
-        if contacto:
-            return contacto.display_name
-
-        contacto_inferido = linea_extracto._retrieve_partner()
-        if contacto_inferido:
-            return contacto_inferido.display_name
-
-        return linea_extracto.partner_name or ""
+        return ""

@@ -1,5 +1,6 @@
-from odoo import _, models
+# -*- coding: utf-8 -*-
 
+from odoo import _, models
 
 class BankReconciliationReportCustomHandler(models.AbstractModel):
     _inherit = "account.bank.reconciliation.report.handler"
@@ -11,28 +12,27 @@ class BankReconciliationReportCustomHandler(models.AbstractModel):
 
         previous_options = previous_options or {}
         options["modo_personalizado"] = previous_options.get("modo_personalizado", options.get("modo_personalizado", False))
+        options["nombre_hecho_por"] = previous_options.get("nombre_hecho_por", options.get("nombre_hecho_por", ""))
+        options["nombre_revisado_por"] = previous_options.get("nombre_revisado_por", options.get("nombre_revisado_por", ""))
+        options["nombre_autorizado_por"] = previous_options.get("nombre_autorizado_por", options.get("nombre_autorizado_por", ""))
 
         botones = options.setdefault("buttons", [])
-        params_accion_existentes = {boton.get("action_param") for boton in botones}
+        params_accion_existentes = {boton.get("action") for boton in botones}
         botones_personalizados = [
             {
                 "name": _("PDF P."),
                 "sequence": 15,
-                "action": "export_file",
-                "action_param": "exportar_a_pdf_personalizado",
-                "file_export_type": _("PDF"),
+                "action": "exportar_a_pdf_personalizado",
             },
             {
                 "name": _("XLSX P."),
                 "sequence": 25,
-                "action": "export_file",
-                "action_param": "exportar_a_xlsx_personalizado",
-                "file_export_type": _("XLSX"),
+                "action": "exportar_a_xlsx_personalizado",
             },
         ]
 
         for boton in botones_personalizados:
-            if boton["action_param"] not in params_accion_existentes:
+            if boton["action"] not in params_accion_existentes:
                 botones.append(boton)
 
         if options.get("modo_personalizado"):
@@ -41,12 +41,23 @@ class BankReconciliationReportCustomHandler(models.AbstractModel):
         botones.sort(key=lambda boton: boton.get("sequence", 0))
 
     def exportar_a_pdf_personalizado(self, options):
-        reporte = self.env["account.report"].browse(options["report_id"])
-        return reporte.export_to_pdf(self._obtener_opciones_exportacion_personalizada(options))
+        return self._abrir_asistente_firmantes(options, "pdf")
 
-    def exportar_a_xlsx_personalizado(self, options, response=None):
-        reporte = self.env["account.report"].browse(options["report_id"])
-        return reporte.export_to_xlsx(self._obtener_opciones_exportacion_personalizada(options), response=response)
+    def exportar_a_xlsx_personalizado(self, options):
+        return self._abrir_asistente_firmantes(options, "xlsx")
+
+    def _abrir_asistente_firmantes(self, options, formato_reporte):
+        return {
+            "name": _("Firmantes"),
+            "type": "ir.actions.act_window",
+            "res_model": "l10n_gt.reporte.banco.firmantes.wizard",
+            "views": [(False, "form")],
+            "target": "new",
+            "context": {
+                "options": options,
+                "formato_reporte": formato_reporte,
+            },
+        }
 
     def _custom_line_postprocessor(self, report, options, lines):
         lines = super()._custom_line_postprocessor(report, options, lines)
@@ -95,16 +106,10 @@ class BankReconciliationReportCustomHandler(models.AbstractModel):
 
         return lines
 
-    def _obtener_opciones_exportacion_personalizada(self, options):
-        return {
-            **options,
-            "modo_personalizado": True,
-        }
-
     def _inyectar_columna_contacto(self, options):
         if any(columna.get("expression_label") == self._ETIQUETA_COLUMNA_CONTACTO for columna in options.get("columns", [])):
             return
-
+    
         nuevas_columnas = []
         insertado = False
         for columna in options.get("columns", []):

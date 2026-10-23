@@ -28,6 +28,9 @@
                                         <t t-out="linea_firma['title']"/>
                                     </div>
                                     <div>
+                                        <t t-out="linea_firma['name']"/>
+                                    </div>
+                                    <div>
                                         <t t-out="linea_firma['subtitle']"/>
                                     </div>
                                 </div>

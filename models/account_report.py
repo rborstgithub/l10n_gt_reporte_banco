@@ -1,9 +1,8 @@
-import io
-
-import xlsxwriter
+# -*- coding: utf-8 -*-
 
 from odoo import _, fields, models
-
+import io
+import xlsxwriter
 
 class AccountReport(models.Model):
     _inherit = "account.report"
@@ -58,18 +57,24 @@ class AccountReport(models.Model):
 
     def _obtener_lineas_firma(self):
         self.ensure_one()
+        hecho_por = self.env["hr.employee"].browse(self.env.context.get("hecho_por_id"))
+        revisado_por = self.env["hr.employee"].browse(self.env.context.get("revisado_por_id"))
+        autorizado_por = self.env["hr.employee"].browse(self.env.context.get("autorizado_por_id"))
         return [
             {
                 "title": _("Hecho Por"),
-                "subtitle": _("Asistente Contable"),
+                "name": hecho_por.name or "",
+                "subtitle": hecho_por.job_id.name or "",
             },
             {
                 "title": _("Revisado Por"),
-                "subtitle": _("Encargada de Créditos"),
+                "name": revisado_por.name or "",
+                "subtitle": revisado_por.job_id.name or "",
             },
             {
                 "title": _("Autorizado por"),
-                "subtitle": _("Contadora General"),
+                "name": autorizado_por.name or "",
+                "subtitle": autorizado_por.job_id.name or "",
             },
         ]
 
@@ -372,8 +377,9 @@ class AccountReport(models.Model):
         sheet.set_column(1, 1, 30)
 
         for desplazamiento_fila, linea_firma in enumerate(lineas_firma):
-            fila_actual = fila_inicio_firma + (desplazamiento_fila * 5)
+            fila_actual = fila_inicio_firma + (desplazamiento_fila * 6)
             sheet.set_row(fila_actual, 24)
             sheet.merge_range(fila_actual + 1, 0, fila_actual + 1, 1, "", formato_linea)
             sheet.write(fila_actual + 2, 0, linea_firma["title"], formato_titulo_firma)
-            sheet.write(fila_actual + 3, 0, linea_firma["subtitle"], formato_subtitulo_firma)
+            sheet.write(fila_actual + 3, 0, linea_firma["name"], formato_subtitulo_firma)
+            sheet.write(fila_actual + 4, 0, linea_firma["subtitle"], formato_subtitulo_firma)

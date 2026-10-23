@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_firmantes_reporte_banco_form" model="ir.ui.view">
+        <field name="name">l10n_gt.reporte.banco.firmantes.wizard.form</field>
+        <field name="model">l10n_gt.reporte.banco.firmantes.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Firmantes">
+                <group>
+                    <field name="hecho_por_id"/>
+                    <field name="revisado_por_id"/>
+                    <field name="autorizado_por_id"/>
+                </group>
+                <footer>
+                    <button name="action_generar" string="Generar" type="object" class="btn-primary"/>
+                    <button string="Cancelar" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>
